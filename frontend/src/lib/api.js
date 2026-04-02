@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE || "https://jira-task-app-6.onrender.com";
 
 function apiUrl(path) {
   if (API_BASE.startsWith("http://") || API_BASE.startsWith("https://")) {

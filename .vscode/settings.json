@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "C:\\Users\\koushik.sanikommu\\Documents\\jira_app\\backend\\.venv\\Scripts\\python.exe",
+  "python.analysis.extraPaths": [
+    "C:\\Users\\koushik.sanikommu\\Documents\\jira_app",
+    "C:\\Users\\koushik.sanikommu\\Documents\\jira_app\\backend"
+  ],
+  "python.terminal.activateEnvironment": true
+}

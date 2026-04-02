@@ -3,36 +3,48 @@ import logging
 from typing import Any
 
 import mysql.connector
+from mysql.connector import errorcode
 
-from backend.services.config import settings
+from services.config import settings
 
 
 LOGGER = logging.getLogger(__name__)
 
 
+def _connection_kwargs(include_database: bool = True) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {
+        "host": settings.mysql_host,
+        "port": settings.mysql_port,
+        "user": settings.mysql_user,
+        "password": settings.mysql_password,
+    }
+    if include_database:
+        kwargs["database"] = settings.mysql_database
+    return kwargs
+
+
 def get_connection():
-    return mysql.connector.connect(
-        host=settings.mysql_host,
-        port=settings.mysql_port,
-        user=settings.mysql_user,
-        password=settings.mysql_password,
-        database=settings.mysql_database,
-    )
+    return mysql.connector.connect(**_connection_kwargs())
 
 
 def init_db() -> None:
-    bootstrap_connection = mysql.connector.connect(
-        host=settings.mysql_host,
-        port=settings.mysql_port,
-        user=settings.mysql_user,
-        password=settings.mysql_password,
-    )
+    try:
+        connection = get_connection()
+    except mysql.connector.Error as exc:
+        if exc.errno != errorcode.ER_BAD_DB_ERROR:
+            raise
 
-    with bootstrap_connection.cursor() as cursor:
-        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {settings.mysql_database}")
-    bootstrap_connection.close()
+        LOGGER.warning("Database %s was not found. Attempting to create it.", settings.mysql_database)
+        bootstrap_connection = mysql.connector.connect(**_connection_kwargs(include_database=False))
+        try:
+            with bootstrap_connection.cursor() as cursor:
+                cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{settings.mysql_database}`")
+            bootstrap_connection.commit()
+        finally:
+            bootstrap_connection.close()
 
-    connection = get_connection()
+        connection = get_connection()
+
     with connection.cursor() as cursor:
         cursor.execute(
             """

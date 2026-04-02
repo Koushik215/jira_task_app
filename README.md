@@ -14,7 +14,6 @@ cd backend
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-Copy-Item ..\.env.example ..\.env
 uvicorn backend.main:app --reload --app-dir ..
 ```
 
@@ -31,46 +30,7 @@ Set `VITE_API_BASE=http://localhost:8000` if the API runs on another origin.
 ## Run with Docker Compose
 
 ```powershell
-Copy-Item .env.example .env
 docker compose up --build
-```
-
-## Deploy On A Single GCP Compute Engine VM
-
-Use the production compose stack instead of the local dev stack.
-
-1. Create an Ubuntu VM in GCP and SSH into it.
-2. Install Docker Engine and the Docker Compose plugin.
-3. Copy this repo to the VM.
-4. Create the production env file:
-
-```bash
-cp .env.gcp.example .env.gcp
-```
-
-5. Edit `.env.gcp` and set your real values, especially:
-
-```env
-GROQ_API_KEY=your_groq_key
-MYSQL_PASSWORD=strong_password
-MYSQL_ROOT_PASSWORD=strong_root_password
-JIRA_ENABLED=false
-```
-
-6. Start the production stack:
-
-```bash
-docker compose -f docker-compose.prod.yml --env-file .env.gcp up --build -d
-```
-
-7. Open the VM external IP over HTTP. The frontend is served on port `80`, and Nginx proxies `/api/*` to the backend container.
-
-Useful commands:
-
-```bash
-docker compose -f docker-compose.prod.yml --env-file .env.gcp ps
-docker compose -f docker-compose.prod.yml --env-file .env.gcp logs -f
-docker compose -f docker-compose.prod.yml --env-file .env.gcp down
 ```
 
 ## Environment

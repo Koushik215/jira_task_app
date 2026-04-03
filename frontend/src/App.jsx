@@ -11,7 +11,8 @@ export default function App() {
   const [cleanedTranscript, setCleanedTranscript] = useState([]);
   const [summary, setSummary] = useState({ total_tasks: 0, created: 0, failed: 0, pending: 0, not_connected: 0 });
   const [loading, setLoading] = useState(false);
-  const [pushing, setPushing] = useState(false);
+  const [pushingAll, setPushingAll] = useState(false);
+  const [pushingTaskKey, setPushingTaskKey] = useState("");
   const [message, setMessage] = useState("");
 
   async function loadDashboard() {
@@ -44,23 +45,47 @@ export default function App() {
     }
   }
 
-  async function handlePush() {
-    setPushing(true);
+  function taskKey(task) {
+    return `${task.task}::${task.owner}`;
+  }
+
+  function mergePushResults(results) {
+    setCurrentTasks((current) =>
+      current.map((task) => {
+        const match = results.find((result) => result.task === task.task && result.owner === task.owner);
+        return match ? { ...task, jira_issue_id: match.jira_issue_id, jira_status: match.jira_status } : task;
+      })
+    );
+  }
+
+  async function handlePushAll() {
+    setPushingAll(true);
     setMessage("");
     try {
       const results = await pushToJira(currentTasks);
-      setCurrentTasks((current) =>
-        current.map((task) => {
-          const match = results.find((result) => result.task === task.task && result.owner === task.owner);
-          return match ? { ...task, jira_issue_id: match.jira_issue_id, jira_status: match.jira_status } : task;
-        })
-      );
+      mergePushResults(results);
       setMessage("Jira push completed. The board has been refreshed with issue status.");
       await loadDashboard();
     } catch (error) {
       setMessage(`Jira push failed: ${error.message}`);
     } finally {
-      setPushing(false);
+      setPushingAll(false);
+    }
+  }
+
+  async function handlePushOne(task) {
+    const key = taskKey(task);
+    setPushingTaskKey(key);
+    setMessage("");
+    try {
+      const results = await pushToJira([task]);
+      mergePushResults(results);
+      setMessage(`Jira update completed for "${task.task}".`);
+      await loadDashboard();
+    } catch (error) {
+      setMessage(`Jira push failed: ${error.message}`);
+    } finally {
+      setPushingTaskKey("");
     }
   }
 
@@ -84,7 +109,14 @@ export default function App() {
         </section>
 
         <section className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <TaskBoard currentTasks={currentTasks} historicalTasks={historicalTasks} onPush={handlePush} isPushing={pushing} />
+          <TaskBoard
+            currentTasks={currentTasks}
+            historicalTasks={historicalTasks}
+            onPushAll={handlePushAll}
+            onPushOne={handlePushOne}
+            isPushingAll={pushingAll}
+            pushingTaskKey={pushingTaskKey}
+          />
           <TimelinePanel cleanedTranscript={cleanedTranscript} />
         </section>
       </div>

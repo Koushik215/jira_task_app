@@ -13,7 +13,11 @@ function statusClass(status) {
   return "text-ink/60";
 }
 
-export default function TaskBoard({ currentTasks, historicalTasks, onPush, isPushing }) {
+function taskKey(task) {
+  return `${task.task}::${task.owner}`;
+}
+
+export default function TaskBoard({ currentTasks, historicalTasks, onPushAll, onPushOne, isPushingAll, pushingTaskKey }) {
   const [activeTab, setActiveTab] = useState("current");
   const tasks = useMemo(
     () => (activeTab === "current" ? currentTasks : historicalTasks),
@@ -35,11 +39,11 @@ export default function TaskBoard({ currentTasks, historicalTasks, onPush, isPus
         </div>
         <button
           type="button"
-          onClick={onPush}
-          disabled={!currentTasks.length || isPushing}
+          onClick={onPushAll}
+          disabled={!currentTasks.length || isPushingAll}
           className="rounded-full bg-ink px-5 py-3 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isPushing ? "Checking..." : "Jira Module (Offline)"}
+          {isPushingAll ? "Adding All..." : "Add All to Jira"}
         </button>
       </div>
 
@@ -72,7 +76,8 @@ export default function TaskBoard({ currentTasks, historicalTasks, onPush, isPus
               <th className="px-4 py-3">Owner</th>
               <th className="px-4 py-3">Priority</th>
               <th className="px-4 py-3">Deadline</th>
-              <th className="px-4 py-3">Jira</th>
+              <th className="px-4 py-3">Jira Status</th>
+              <th className="px-4 py-3">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink/10 text-sm text-ink">
@@ -90,11 +95,25 @@ export default function TaskBoard({ currentTasks, historicalTasks, onPush, isPus
                   <td className={`px-4 py-3 font-medium ${statusClass(task.jira_status)}`}>
                     {task.jira_issue_id || (task.jira_status === "not_connected" ? "Not connected" : task.jira_status)}
                   </td>
+                  <td className="px-4 py-3">
+                    {activeTab === "current" ? (
+                      <button
+                        type="button"
+                        onClick={() => onPushOne(task)}
+                        disabled={isPushingAll || pushingTaskKey === taskKey(task)}
+                        className="rounded-full border border-ink/15 px-3 py-2 text-xs font-semibold text-ink transition hover:border-ink/30 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {pushingTaskKey === taskKey(task) ? "Adding..." : "Add to Jira"}
+                      </button>
+                    ) : (
+                      <span className="text-ink/45">History</span>
+                    )}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td className="px-4 py-6 text-center text-ink/60" colSpan="5">
+                <td className="px-4 py-6 text-center text-ink/60" colSpan="6">
                   {activeTab === "current" ? "No tasks extracted from the current transcript yet." : "No previous tasks found yet."}
                 </td>
               </tr>

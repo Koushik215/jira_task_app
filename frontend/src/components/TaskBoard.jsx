@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 function priorityClass(priority) {
   if (priority === "High") return "bg-coral/15 text-coral";
@@ -19,6 +19,12 @@ export default function TaskBoard({ currentTasks, historicalTasks, onPush, isPus
     () => (activeTab === "current" ? currentTasks : historicalTasks),
     [activeTab, currentTasks, historicalTasks]
   );
+
+  useEffect(() => {
+    if (currentTasks.length > 0) {
+      setActiveTab("current");
+    }
+  }, [currentTasks]);
 
   return (
     <section className="glass-card rounded-3xl p-6 shadow-soft">
